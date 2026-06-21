@@ -11,6 +11,7 @@
     "dev:turbo": "next dev --port 3000"
   },
   "dependencies": {
+    "@repo/api": "*",
     "@repo/shared": "*",
     "@swc/helpers": "^0.5.15",
     "next": "16.2.7",
@@ -20,7 +21,6 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@repo/api": "*",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

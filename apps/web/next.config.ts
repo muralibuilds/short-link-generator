@@ -22,11 +22,18 @@ const nextConfig: NextConfig = {
     root: monorepoRoot,
   },
   async rewrites() {
+    // Dev only: proxy /api to the standalone Express server. On Vercel, localhost
+    // resolves to a private IP and triggers DNS_HOSTNAME_RESOLVED_PRIVATE.
     if (process.env.NODE_ENV === "development") {
-      return [{ source: "/api/:path*", destination: "http://localhost:8000/api/:path*" }];
+      return [
+        {
+          source: "/api/:path*",
+          destination: `${apiInternalUrl}/api/:path*`,
+        },
+      ];
     }
-    return []; // production: use pages/api or /api serverless
-  }
+    return [];
+  },
 };
 
 export default nextConfig;

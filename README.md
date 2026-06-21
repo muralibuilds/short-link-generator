@@ -55,9 +55,9 @@ npm run dev
 | `MONGO_CONNECTION`    | MongoDB URI                                      |
 | `API_PORT` / `PORT`   | Express port (default `8000`)                    |
 | `BASE`                | Public origin for short links (e.g. `http://localhost:3000`) |
-| `NEXT_PUBLIC_API_URL` | Leave empty to use same-origin `/api` rewrites   |
-| `API_INTERNAL_URL`    | Next.js rewrite target (default `http://localhost:8000`) |
-| `JWT_SECRET`          | Auth foundation (not fully implemented)          |
+| `NEXT_PUBLIC_API_URL` | Leave empty to use same-origin `/api`            |
+| `API_INTERNAL_URL`    | **Dev only** — rewrite target (default `http://localhost:8000`). Do not set on Vercel. |
+| `JWT_SECRET`          | JWT signing secret                               |
 
 ## API
 
@@ -84,11 +84,16 @@ import { shortenUrlSchema, API_ROUTES, successResponse } from "@repo/shared";
 
 ### Vercel (primary)
 
-1. Connect repo; set root to repository root.
-2. Add env vars from `.env.example` in Vercel dashboard.
-3. `vercel.json` routes `/api/*` to the Express serverless handler and serves Next from `apps/web`.
+1. Connect the repo and set **Root Directory** to `apps/web` (recommended).  
+   `apps/web/vercel.json` runs install/build from the monorepo root.
+2. Add environment variables in the Vercel dashboard:
+   - `MONGO_CONNECTION` — MongoDB Atlas URI (not `127.0.0.1`)
+   - `BASE` — `https://your-app.vercel.app` (no trailing slash)
+   - `JWT_SECRET` — strong random secret
+   - **Do not** set `API_INTERNAL_URL` (dev-only rewrite to localhost)
+3. Production API is served by Next.js at `pages/api/[...slug].ts` (Express embedded). No rewrite to `localhost:8000`.
 
-Set `MONGO_CONNECTION`, `BASE` (production URL), `JWT_SECRET`.
+After deploy, verify `https://your-app.vercel.app/api/health` returns `{ "success": true, ... }`.
 
 ### Docker
 
