@@ -1,11 +1,34 @@
+import path from "path";
+import dotenv from "dotenv";
 import type { NextConfig } from "next";
 
+const monorepoRoot = path.join(__dirname, "../..");
+dotenv.config({ path: path.join(monorepoRoot, ".env") });
+
+const apiInternalUrl =
+  process.env.API_INTERNAL_URL ?? "http://localhost:8000";
+
 const nextConfig: NextConfig = {
-  // Compile the workspace packages from their TypeScript source.
-  transpilePackages: ["@repo/shared", "@repo/api"],
-  // Keep these server-only Node packages external (don't bundle them) so
-  // Express/Mongoose behave correctly inside the serverless function.
-  serverExternalPackages: ["mongoose", "express"],
+  transpilePackages: ["@repo/shared"],
+  outputFileTracingRoot: monorepoRoot,
+  serverExternalPackages: [
+    "mongoose",
+    "express",
+    "bcrypt",
+    "geoip-lite",
+    "ua-parser-js",
+  ],
+  turbopack: {
+    root: monorepoRoot,
+  },
+  async rewrites() {
+    return [
+      {
+        source: "/api/:path*",
+        destination: `${apiInternalUrl}/api/:path*`,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

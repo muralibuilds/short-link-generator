@@ -2,6 +2,12 @@ import mongoose, { Schema, type InferSchemaType } from "mongoose";
 
 const shortUrlSchema = new Schema(
   {
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: false,
+      index: true,
+    },
     urlId: { type: String, required: true, unique: true, index: true },
     origUrl: { type: String, required: true },
     shortUrl: { type: String, required: true },
@@ -11,7 +17,8 @@ const shortUrlSchema = new Schema(
   { timestamps: false }
 );
 
-shortUrlSchema.index({ origUrl: 1 });
+shortUrlSchema.index({ origUrl: 1, userId: 1 });
+shortUrlSchema.index({ userId: 1, date: -1 });
 
 export type ShortUrlDocument = InferSchemaType<typeof shortUrlSchema> & {
   _id: mongoose.Types.ObjectId;

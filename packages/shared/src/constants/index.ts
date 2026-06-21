@@ -1,7 +1,12 @@
 export const API_ROUTES = {
   SHORT: "/api/short",
   SHORT_BY_ID: (urlId: string) => `/api/short/${urlId}`,
+  SHORT_CLICKS: (urlId: string) => `/api/short/${urlId}/clicks`,
   HEALTH: "/api/health",
+  AUTH_REGISTER: "/api/auth/register",
+  AUTH_LOGIN: "/api/auth/login",
+  AUTH_LOGOUT: "/api/auth/logout",
+  AUTH_ME: "/api/auth/me",
 } as const;
 
 export const SHORT_URL_ID_LENGTH = 10;
@@ -19,5 +24,10 @@ export enum AppErrorCode {
   VALIDATION_ERROR = "VALIDATION_ERROR",
   NOT_FOUND = "NOT_FOUND",
   UNAUTHORIZED = "UNAUTHORIZED",
+  CONFLICT = "CONFLICT",
   INTERNAL_ERROR = "INTERNAL_ERROR",
 }
+
+export const DEFAULT_PAGE = 1;
+export const DEFAULT_LIMIT = 20;
+export const MAX_LIMIT = 100;

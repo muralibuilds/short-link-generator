@@ -1,8 +1,34 @@
+import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
 
-dotenv.config({ path: path.resolve(process.cwd(), "../../.env") });
-dotenv.config({ path: path.resolve(process.cwd(), ".env") });
+const ENV_FILENAME = ".env";
+
+/** Candidate paths for the monorepo root `.env`, ordered by preference. */
+function getEnvCandidates(): string[] {
+  const fromConfigDir = path.resolve(__dirname, "../../../..");
+  const fromCwd = process.cwd();
+  const fromCwdParent = path.resolve(fromCwd, "../..");
+
+  return [
+    path.join(fromConfigDir, ENV_FILENAME),
+    path.join(fromCwd, ENV_FILENAME),
+    path.join(fromCwd, "..", "..", ENV_FILENAME),
+    path.join(fromCwdParent, ENV_FILENAME),
+  ];
+}
+
+export function loadMonorepoEnv(): string | undefined {
+  for (const envPath of getEnvCandidates()) {
+    if (fs.existsSync(envPath)) {
+      dotenv.config({ path: envPath });
+      return envPath;
+    }
+  }
+  return undefined;
+}
+
+loadMonorepoEnv();
 
 function requireEnv(key: string, fallback?: string): string {
   const value = process.env[key] ?? fallback;

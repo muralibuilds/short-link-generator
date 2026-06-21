@@ -14,6 +14,8 @@ async function bootstrap() {
 }
 
 bootstrap().catch((err) => {
-  logger.error("Failed to start server", { error: err });
+  logger.error("Failed to start server", {
+    error: err instanceof Error ? err.message : String(err),
+  });
   process.exit(1);
 });

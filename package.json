@@ -20,8 +20,5 @@
   "engines": {
     "node": ">=20"
   },
-  "packageManager": "npm@10.9.2",
-  "dependencies": {
-    "next": "^16.2.7"
-  }
+  "packageManager": "npm@10.9.2"
 }
