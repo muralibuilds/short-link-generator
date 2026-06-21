@@ -22,13 +22,11 @@ const nextConfig: NextConfig = {
     root: monorepoRoot,
   },
   async rewrites() {
-    return [
-      {
-        source: "/api/:path*",
-        destination: `${apiInternalUrl}/api/:path*`,
-      },
-    ];
-  },
+    if (process.env.NODE_ENV === "development") {
+      return [{ source: "/api/:path*", destination: "http://localhost:8000/api/:path*" }];
+    }
+    return []; // production: use pages/api or /api serverless
+  }
 };
 
 export default nextConfig;
