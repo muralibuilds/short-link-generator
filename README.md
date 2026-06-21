@@ -1,174 +1,159 @@
-# Short Link — Full-Stack Monolith (Turborepo)
+# Short Link
 
-URL shortener monorepo: **Next.js** (`apps/web`) + **Express** (`apps/api`) + **shared types/schemas** (`packages/shared`).
+A full-stack URL shortener with click analytics. Create short links, track every click with geo and device data, and manage everything from a dashboard.
 
-## Structure
+## Features
+
+- **URL shortening** — Generate compact links with 10-character IDs
+- **Click analytics** — Record IP, country, referrer, browser, device, and OS on each redirect
+- **Dashboard** — List links, view per-link stats, browse click history, and chart clicks over time
+- **Authentication** — Register, log in, and manage links tied to your account via HTTP-only session cookies
+- **Guest flow** — Visitors can paste a URL on the landing page and are guided to sign up before the link is saved
+
+## Tech stack
+
+| Layer | Technologies |
+| --- | --- |
+| Frontend | Next.js 16, React 19, Tailwind CSS 4, Recharts |
+| Backend | Express, Mongoose, Zod |
+| Database | MongoDB |
+| Monorepo | npm workspaces, Turborepo |
+| Shared | `@repo/shared` — types, Zod schemas, API constants |
+
+## Project structure
 
 ```
 short-link/
 ├── apps/
-│   ├── web/          # Next.js (App Router)
-│   └── api/          # Express + MongoDB
+│   ├── api/          # Express REST API
+│   └── web/          # Next.js frontend
 ├── packages/
-│   └── shared/       # @repo/shared — types, constants, Zod schemas
-├── package.json
-├── turbo.json
-├── .env
-├── .env.example
-├── vercel.json
-├── Dockerfile
-└── docker-compose.yml
+│   └── shared/       # Shared types, schemas, and utilities
+├── docker-compose.yml
+└── turbo.json
 ```
 
 ## Prerequisites
 
 - Node.js 20+
-- MongoDB (local or Atlas)
+- npm 10+
+- MongoDB (local instance, Docker, or [MongoDB Atlas](https://www.mongodb.com/atlas))
 
-## Quick start
+## Getting started
+
+### 1. Install dependencies
+
+```bash
+npm install
+```
+
+### 2. Configure environment
+
+Copy the example env file and adjust values as needed:
 
 ```bash
 cp .env.example .env
-# Edit MONGO_CONNECTION, BASE, ports
+```
 
-npm install
+### 3. Start MongoDB
+
+If you don't have MongoDB running locally, start it with Docker:
+
+```bash
+docker compose up mongo -d
+```
+
+### 4. Run the dev servers
+
+```bash
 npm run dev
 ```
 
-- Web: http://localhost:3000  
-- API (direct): http://localhost:8000/api/health  
-- Browser API calls: `/api/*` (proxied by Next.js — no CORS)
+This starts both apps via Turborepo:
 
-## Scripts (root)
+- **Web** — [http://localhost:3000](http://localhost:3000)
+- **API** — [http://localhost:8000](http://localhost:8000)
 
-| Command        | Description                          |
-|----------------|--------------------------------------|
-| `npm run dev`  | Turbo dev — web + api + shared watch |
-| `npm run build`| Build all packages                   |
-| `npm run lint` | Typecheck / lint workspaces          |
-| `npm run start`| Production start (after build)       |
+In development, Next.js rewrites `/api/*` requests to the Express server at `API_INTERNAL_URL`.
 
-## Environment
+## Environment variables
 
-| Variable              | Description                                      |
-|-----------------------|--------------------------------------------------|
-| `MONGO_CONNECTION`    | MongoDB URI                                      |
-| `API_PORT` / `PORT`   | Express port (default `8000`)                    |
-| `BASE`                | Public origin for short links (e.g. `http://localhost:3000`) |
-| `NEXT_PUBLIC_API_URL` | Leave empty to use same-origin `/api`            |
-| `API_INTERNAL_URL`    | **Dev only** — rewrite target (default `http://localhost:8000`). Do not set on Vercel. |
-| `JWT_SECRET`          | JWT signing secret                               |
+| Variable | Description |
+| --- | --- |
+| `MONGO_CONNECTION` | MongoDB connection string |
+| `API_PORT` / `PORT` | Express server port (default `8000`) |
+| `BASE` | Public base URL for generated short links (no trailing slash) |
+| `NEXT_PUBLIC_API_URL` | Browser API base URL — leave empty to use same-origin `/api` |
+| `API_INTERNAL_URL` | Dev-only proxy target for Next.js rewrites (default `http://localhost:8000`) |
+| `JWT_SECRET` | Secret for signing session tokens |
+| `JWT_EXPIRES_IN` | Token lifetime (default `7d`) |
+| `COOKIE_NAME` | Session cookie name (default `short_link_session`) |
+| `DNS_SERVERS` | Optional comma-separated DNS servers for Atlas SRV resolution |
 
-## API
+See [`.env.example`](.env.example) for defaults.
 
-Standard response shape (`@repo/shared`):
+## Docker
 
-```json
-{ "success": true, "data": {} }
-{ "success": false, "error": { "message": "", "code": "" } }
-```
-
-| Method | Path              | Description        |
-|--------|-------------------|--------------------|
-| GET    | `/api/health`     | Health check       |
-| POST   | `/api/short`      | `{ "origUrl": "..." }` |
-| GET    | `/api/short/:id`  | Redirect           |
-
-## Shared package
-
-```ts
-import { shortenUrlSchema, API_ROUTES, successResponse } from "@repo/shared";
-```
-
-## Deployment
-
-### Vercel (primary)
-
-1. Connect the repo and set **Root Directory** to `apps/web` (recommended).  
-   `apps/web/vercel.json` runs install/build from the monorepo root.
-2. Add environment variables in the Vercel dashboard:
-   - `MONGO_CONNECTION` — MongoDB Atlas URI (not `127.0.0.1`)
-   - `BASE` — `https://your-app.vercel.app` (no trailing slash)
-   - `JWT_SECRET` — strong random secret
-   - **Do not** set `API_INTERNAL_URL` (dev-only rewrite to localhost)
-3. Production API is served by Next.js at `pages/api/[...slug].ts` (Express embedded). No rewrite to `localhost:8000`.
-
-After deploy, verify `https://your-app.vercel.app/api/health` returns `{ "success": true, ... }`.
-
-### Docker
+Run the full stack (MongoDB, API, and web) with Docker Compose:
 
 ```bash
 docker compose up --build
 ```
 
-### VPS / single container
+- Web: [http://localhost:3000](http://localhost:3000)
+- API: [http://localhost:8000](http://localhost:8000)
 
-```bash
-docker build -t short-link .
-docker run -p 3000:3000 -p 8000:8000 --env-file .env short-link
-```
+Set `JWT_SECRET` in your shell or a `.env` file before starting in production-like mode.
 
----
+## API
 
-## Migration from `backend/` + `frontend/`
+All routes are prefixed with `/api`.
 
-### 1. Copy environment
+### Health
 
-```bash
-cp backend/.env .env
-```
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| `GET` | `/health` | No | Health check |
 
-Update values:
+### Auth
 
-- `BASE=http://localhost:3000` (was often `http://localhost:8000` — short links should use the Next.js origin)
-- Add `API_INTERNAL_URL=http://localhost:8000`
-- Add `API_PORT=8000`
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| `POST` | `/auth/register` | No | Create an account |
+| `POST` | `/auth/login` | No | Log in |
+| `POST` | `/auth/logout` | No | Log out |
+| `GET` | `/auth/me` | Yes | Get current user |
 
-### 2. Install monorepo
+### Short URLs
 
-```bash
-npm install
-npm run build
-npm run dev
-```
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| `GET` | `/short` | Yes | List the current user's links (paginated) |
+| `POST` | `/short` | Yes | Create a short link (`{ "origUrl": "..." }`) |
+| `GET` | `/short/:urlId` | No | Redirect to the original URL and record a click |
+| `GET` | `/short/:urlId/clicks` | Yes | List click events for a link (paginated) |
 
-### 3. Verify
+Short links are generated as `{BASE}/api/short/{urlId}`.
 
-- Open http://localhost:3000 — shorten a URL
-- `GET http://localhost:3000/api/health` → `{ "success": true, ... }`
-- Open generated short link → redirects to original URL
+## Deployment (Vercel)
 
-### 4. Remove legacy folders (after verification)
+The web app is configured for Vercel deployment. In production:
 
-```bash
-rm -rf backend frontend
-```
+- The Express app is mounted through Next.js at `pages/api/[...slug].ts`
+- Do **not** set `API_INTERNAL_URL` on Vercel — localhost resolves to a private IP and breaks rewrites
+- Use a cloud MongoDB URI (e.g. Atlas) in `MONGO_CONNECTION` — Vercel cannot reach `127.0.0.1`
+- Set `BASE` to your production domain (e.g. `https://your-app.vercel.app`)
 
-### File mapping
+## Scripts
 
-| Legacy                    | New                                      |
-|---------------------------|------------------------------------------|
-| `backend/app.js`          | `apps/api/src/app.ts`, `server.ts`       |
-| `backend/controller/`     | `apps/api/src/controllers/`              |
-| `backend/routes/`         | `apps/api/src/routes/`                   |
-| `backend/models/`         | `apps/api/src/models/`                   |
-| `frontend/app/`           | `apps/web/src/app/`                      |
-| `frontend/public/`        | `apps/web/public/`                       |
-| (new)                     | `packages/shared/`                       |
-| (new)                     | `apps/web/src/lib/api-client.ts`         |
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Start all apps in development mode |
+| `npm run build` | Build all packages and apps |
+| `npm run start` | Start all apps in production mode |
+| `npm run lint` | Lint all workspaces |
+| `npm run clean` | Remove build artifacts and `node_modules` |
 
-### Route changes
+## License
 
-Legacy routes were `/short` (no `/api` prefix). All API routes are now under `/api/short` with standardized JSON responses.
-
----
-
-## Auth foundation
-
-Prepared but not fully implemented:
-
-- `apps/api/src/middleware/auth.ts` — JWT + cookie extraction
-- `apps/api/src/config/auth.ts` — cookie/JWT settings
-- `apps/api/src/middleware/session.ts` — session placeholder
-
-Implement login/register when ready and use `authenticate({ required: true })` on protected routes.
+Private — not licensed for redistribution.
